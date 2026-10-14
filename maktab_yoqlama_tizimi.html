@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Maktab o'quvchilari davomat tizimi — sinflar, statistika, Telegram integratsiyasi">
+<title>📊 Smart Davomat PRO — Maktab tizimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ================== THEME ================== */
+:root{
+  --accent:#4f8cff; --accent2:#7b5cff;
+  --ok:#22c55e; --no:#ef4444; --warn:#f59e0b;
+  --radius:18px; --font:'Inter',sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0a0f1e; --bg2:#0d1526;
+  --card:rgba(255,255,255,.055); --card-solid:#111a2e;
+  --border:rgba(255,255,255,.09);
+  --text:#e9eefb; --muted:#8b97b0;
+  --chip:rgba(255,255,255,.07);
+  --shadow:0 20px 50px rgba(0,0,0,.45);
+  --glass-blur:blur(18px);
+}
+[data-theme="light"]{
+  --bg:#eef2fb; --bg2:#e3eaf7;
+  --card:rgba(255,255,255,.75); --card-solid:#ffffff;
+  --border:rgba(20,40,80,.08);
+  --text:#131b2e; --muted:#5f6b85;
+  --chip:rgba(255,255,255,.65);
+  --shadow:0 20px 50px rgba(30,60,120,.14);
+  --glass-blur:blur(18px);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:var(--font);-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{min-height:100vh;background:var(--bg);color:var(--text);overflow-x:hidden;transition:background .4s,color .4s;padding-bottom:env(safe-area-inset-bottom)}
+
+/* animated background */
+.bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 18s ease-in-out infinite}
+.blob.b1{width:480px;height:480px;background:#3b6dff33;top:-140px;left:-120px}
+.blob.b2{width:420px;height:420px;background:#8b5cf633;bottom:-120px;right:-100px;animation-delay:-6s}
+.blob.b3{width:360px;height:360px;background:#06b6d433;top:40%;left:55%;animation-delay:-11s}
+[data-theme="light"] .blob{opacity:.35}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(50px,-40px) scale(1.08)}66%{transform:translate(-40px,30px) scale(.94)}}
+
+.wrap{max-width:960px;margin:0 auto;padding:18px 16px 30px}
+.glass{background:var(--card);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+
+/* ================== LOGIN ================== */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:440px;padding:38px 30px;text-align:center;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+.logo{width:78px;height:78px;margin:0 auto 18px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 30px rgba(79,140,255,.4);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 12px 30px rgba(79,140,255,.4)}50%{box-shadow:0 12px 50px rgba(123,92,255,.6)}}
+.login-card h1{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.login-card .sub{color:var(--muted);font-size:13.5px;margin:8px 0 24px}
+.chipgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:6px}
+.chip{padding:11px 4px;border-radius:12px;background:var(--chip);border:1.5px solid transparent;color:var(--text);font-weight:700;font-size:14px;cursor:pointer;transition:.18s;font-family:var(--font)}
+.chip:hover{transform:translateY(-2px);border-color:var(--accent)}
+.chip.sel{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 20px rgba(79,140,255,.45);transform:translateY(-2px)}
+@media(max-width:430px){.chipgrid{grid-template-columns:repeat(3,1fr)}}
+.pw-wrap{position:relative;margin-top:18px}
+.pw-wrap input{width:100%;padding:14px 48px 14px 16px;border-radius:14px;border:1.5px solid var(--border);background:var(--chip);color:var(--text);font-size:16px;outline:none;transition:.2s;font-family:var(--font)}
+.pw-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(79,140,255,.15)}
+.eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:8px;opacity:.6}
+.btn{border:none;border-radius:13px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;transition:.18s;font-family:var(--font);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn-main{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;width:100%;margin-top:18px;font-size:16px;padding:15px;box-shadow:0 10px 25px rgba(79,140,255,.35)}
+.err{color:var(--no);font-size:13px;font-weight:600;margin-top:12px;min-height:18px}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+/* ================== TOPBAR ================== */
+.topbar{position:sticky;top:12px;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;margin-bottom:18px;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:11px;min-width:0}
+.tb-logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tb-left h2{font-size:16px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-left small{color:var(--muted);font-size:12px;display:block}
+.tb-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn-ghost{background:var(--chip);color:var(--text);border:1px solid var(--border);padding:10px 15px;font-size:13.5px}
+.btn-gold{background:linear-gradient(135deg,#f6b93b,#f59e0b);color:#3d2a00;box-shadow:0 6px 18px rgba(245,158,11,.35);padding:10px 15px;font-size:13.5px}
+
+/* ================== TEACHER ================== */
+.tcard{display:flex;align-items:center;gap:15px;padding:18px 20px;margin-bottom:14px;flex-wrap:wrap}
+.tava{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;font-weight:800;flex-shrink:0;box-shadow:0 8px 20px rgba(79,140,255,.35)}
+.tinfo small{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.tinfo b{font-size:18px;display:block;margin:2px 0}
+.tinfo a{color:var(--ok);font-weight:700;text-decoration:none;font-size:14.5px}
+.tbadge{margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:8px 16px;border-radius:30px;font-size:13px;font-weight:800}
+
+/* ================== STATS ================== */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:14px}
+.stat{padding:16px;display:flex;align-items:center;gap:13px}
+.stat .ic{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.stat b{font-size:24px;font-weight:800;display:block;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted);font-weight:600}
+.ic-blue{background:rgba(79,140,255,.15)}
+.ic-green{background:rgba(34,197,94,.15)}
+.ic-red{background:rgba(239,68,68,.15)}
+.ic-amber{background:rgba(245,158,11,.18)}
+.ring{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;font-weight:800;font-size:14px}
+.ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--card-solid)}
+
+/* ================== ATTENDANCE ================== */
+.acard{padding:20px;margin-bottom:14px}
+.ahead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.datenav{display:flex;align-items:center;gap:8px}
+.navbtn{width:38px;height:38px;border-radius:11px;background:var(--chip);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;transition:.15s}
+.navbtn:hover{background:var(--accent);color:#fff}
+#inpSana{padding:10px 12px;border-radius:11px;border:1.5px solid var(--border);background:var(--chip);color:var(--text);font-size:14px;font-weight:600;outline:none;font-family:var(--font);color-scheme:dark}
+[data-theme="light"] #inpSana{color-scheme:light}
+.btn-today{background:var(--chip);border:1px solid var(--border);color:var(--text);padding:10px 14px;font-size:13px;border-radius:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-today:hover{border-color:var(--accent);color:var(--accent)}
+.search{position:relative;flex:1 1 180px;max-width:260px}
+.search input{width:100%;padding:11px 14px 11px 38px;border-radius:11px;border:1.5px solid var(--border);background:var(--chip);color:var(--text);font-size:16px;outline:none;font-family:var(--font)}
+.search input:focus{border-color:var(--accent)}
+.search .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
+.quickrow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.btn-quick{background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.35);color:var(--ok);padding:9px 14px;font-size:13px;border-radius:11px;font-weight:700;cursor:pointer;font-family:var(--font);transition:.15s}
+.btn-quick:hover{background:rgba(34,197,94,.25)}
+.btn-quick.clear{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#ff6b6b}
+.btn-quick.clear:hover{background:rgba(239,68,68,.22)}
+.btn-quick.print{background:var(--chip);border-color:var(--border);color:var(--text)}
+.btn-quick.print:hover{border-color:var(--accent);color:var(--accent)}
+
+.srow{display:flex;align-items:center;gap:10px;padding:11px 10px;border-bottom:1px solid var(--border);transition:.15s;flex-wrap:wrap;animation:rowIn .3s both}
+.srow:hover{background:var(--chip)}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.snum{width:24px;text-align:center;color:var(--muted);font-size:12px;font-weight:700;flex-shrink:0}
+.sava{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.sfio{flex:1 1 160px;min-width:140px}
+.sfio b{font-size:14.5px;display:block}
+.sfio small{color:var(--muted);font-size:11.5px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.d-ok{background:var(--ok)} .d-no{background:var(--no)} .d-warn{background:var(--warn)} .d-none{background:rgba(128,140,160,.35)}
+.spill{font-size:11.5px;padding:5px 11px;border-radius:20px;font-weight:800;white-space:nowrap}
+.p-keldi{background:rgba(34,197,94,.16);color:#2fd06d}
+.p-kelmadi{background:rgba(239,68,68,.16);color:#ff6b6b}
+.p-sababli{background:rgba(245,158,11,.18);color:#f6b93b}
+.p-none{background:var(--chip);color:var(--muted)}
+.acts{display:flex;gap:6px;margin-left:auto}
+.abtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--chip);cursor:pointer;font-size:15px;transition:.15s;display:flex;align-items:center;justify-content:center}
+.abtn:hover{transform:scale(1.12)}
+.abtn.on-ok{background:var(--ok);border-color:var(--ok)}
+.abtn.on-no{background:var(--no);border-color:var(--no)}
+.abtn.on-warn{background:var(--warn);border-color:var(--warn)}
+.abtn.wa{background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.4)}
+
+.addrow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.addrow input{flex:1 1 140px;padding:12px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--chip);color:var(--text);font-size:16px;outline:none;font-family:var(--font)}
+.addrow input:focus{border-color:var(--accent)}
+.btn-add{background:linear-gradient(135deg,var(--ok),#16a34a);color:#fff;box-shadow:0 6px 18px rgba(34,197,94,.3)}
+
+/* ================== SEND ================== */
+.sendzone{text-align:center;padding:22px;margin-bottom:14px}
+.btn-send{background:linear-gradient(135deg,#0088cc,#00b4f0);color:#fff;font-size:16.5px;padding:16px 42px;box-shadow:0 10px 28px rgba(0,136,204,.4)}
+.btn-send:disabled{opacity:.6;cursor:wait;transform:none}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.sendhint{color:var(--muted);font-size:12.5px;margin-top:10px}
+
+footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 10px 40px;line-height:1.9}
+footer b{color:var(--accent)}
+footer .dev{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:30px;padding:10px 22px;backdrop-filter:var(--glass-blur);flex-wrap:wrap;justify-content:center}
+footer a{color:var(--accent);text-decoration:none;font-weight:700}
+
+/* ================== MODAL ================== */
+#overlay{position:fixed;inset:0;background:rgba(5,10,25,.6);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+#overlay.show{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{width:100%;max-width:440px;background:var(--card-solid);border:1px solid var(--border);border-radius:22px;padding:26px;animation:pop .3s cubic-bezier(.2,1.3,.4,1);box-shadow:var(--shadow);max-height:88vh;overflow-y:auto}
+.modal.wide{max-width:640px}
+.modal h3{font-size:19px;margin-bottom:6px}
+.modal .msub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.modal label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+.modal input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--chip);color:var(--text);font-size:16px;outline:none;font-family:var(--font)}
+.modal input:focus{border-color:var(--accent)}
+.mrow{display:flex;gap:10px;margin-top:22px}
+.mrow .btn{flex:1;padding:13px}
+.btn-cancel{background:var(--chip);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:var(--no);color:#fff;box-shadow:0 8px 20px rgba(239,68,68,.35)}
+.btn-ok{background:var(--ok);color:#fff;box-shadow:0 8px 20px rgba(34,197,94,.3)}
+.btn-blue{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 20px rgba(79,140,255,.35)}
+.sect{border-top:1px solid var(--border);margin-top:20px;padding-top:14px}
+.sect h4{font-size:14px;font-weight:800;margin-bottom:4px}
+.sect .hint{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+
+/* statistika modal */
+.pertoggle{display:inline-flex;background:var(--chip);border-radius:12px;padding:4px;gap:4px;margin-bottom:10px}
+.pertoggle button{border:none;background:transparent;color:var(--muted);padding:8px 18px;border-radius:9px;font-weight:800;font-size:13px;cursor:pointer;font-family:var(--font)}
+.pertoggle button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.chartbox{background:var(--chip);border-radius:14px;padding:14px;margin:14px 0;height:220px}
+.mini-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.mini-table th{color:var(--muted);font-size:11px;text-transform:uppercase;text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}
+.mini-table td{padding:8px;border-bottom:1px solid var(--border)}
+.mini-table tr:last-child td{border-bottom:none}
+.pill-s{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:800}
+
+/* ================== TOAST ================== */
+#toasts{position:fixed;top:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:10px;max-width:320px}
+.toast{background:var(--card-solid);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:13px 17px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);animation:tin .35s cubic-bezier(.2,1.3,.4,1);display:flex;gap:10px;align-items:center}
+.toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--no)} .toast.warn{border-left-color:var(--warn)}
+.toast.out{animation:tout .3s forwards}
+@keyframes tin{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+@keyframes tout{to{opacity:0;transform:translateX(60px)}}
+
+.empty{ text-align:center;padding:34px 10px;color:var(--muted)}
+.empty .big{font-size:40px;margin-bottom:8px}
+.hide-sm{display:inline}
+@keyframes slideup{from{transform:translateY(70px);opacity:0}to{transform:none;opacity:1}}
+
+/* ================== PRINT ================== */
+#printArea{display:none}
+@media print{
+  body{background:#fff!important;color:#000!important;padding:0}
+  .bgfx,#loginScreen,#app,#toasts,#overlay{display:none!important}
+  #printArea{display:block!important;padding:20px}
+  #printArea h1{font-size:20px;text-align:center;margin-bottom:4px}
+  #printArea .pmeta{text-align:center;font-size:13px;margin-bottom:16px;color:#333}
+  #printArea table{width:100%;border-collapse:collapse;font-size:13px}
+  #printArea th,#printArea td{border:1px solid #999;padding:7px 9px;text-align:left}
+  #printArea th{background:#eee}
+  #printArea .psign{margin-top:40px;display:flex;justify-content:space-between;font-size:13px}
+}
+/* ================== MOBILE (telefon) ================== */
+@media(max-width:600px){
+  .wrap{padding:10px 10px 18px}
+  .topbar{top:8px;padding:10px 12px;gap:8px}
+  .tb-logo{width:36px;height:36px;font-size:17px;border-radius:11px}
+  .tb-left h2{font-size:14px}
+  .tb-left small{font-size:10.5px}
+  .tb-btns{gap:6px}
+  .btn-ghost,.btn-gold{padding:9px 11px;font-size:13px}
+
+  .statgrid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{padding:12px 13px;gap:10px}
+  .stat b{font-size:20px}
+  .stat span{font-size:11px}
+  .stat .ic{width:38px;height:38px;font-size:17px;border-radius:11px}
+  .ring{width:48px;height:48px;font-size:12px}
+  .ring::before{inset:4px}
+
+  .tcard{padding:14px 16px;gap:12px}
+  .tava{width:48px;height:48px;font-size:19px}
+  .tinfo b{font-size:15.5px}
+  .tinfo a{font-size:13.5px}
+  .tbadge{margin-left:0;flex-basis:100%;text-align:center;padding:9px}
+
+  .acard{padding:14px 12px}
+  .ahead{gap:8px}
+  .datenav{flex-wrap:wrap}
+  .search{flex-basis:100%;max-width:none;order:9}
+
+  .srow{display:grid;grid-template-columns:38px minmax(0,1fr) auto;grid-template-areas:"ava fio pill" "ava acts acts";align-items:center;column-gap:10px;row-gap:9px;padding:11px 6px}
+  .snum{display:none}
+  .sava{grid-area:ava;width:38px;height:38px}
+  .sfio{grid-area:fio;min-width:0}
+  .sfio b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spill{grid-area:pill;justify-self:end;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acts{grid-area:acts;justify-self:end;margin:0}
+
+  .abtn{width:42px;height:42px;font-size:17px;border-radius:12px}
+  .navbtn{width:42px;height:42px}
+  .btn-today{padding:12px 14px}
+  .quickrow .btn-quick{flex:1;justify-content:center;padding:11px 8px;font-size:12px}
+
+  .addrow{gap:7px}
+  .addrow input{flex:1 1 100%}
+  .addrow .btn-add{flex:1 1 100%;padding:14px}
+
+  .sendzone{position:sticky;bottom:10px;z-index:40;padding:14px}
+  .btn-send{width:100%;padding:16px}
+
+  /* ✅ TO'G'IRLANGAN footer qismi */
+  footer .dev{flex-direction:column;align-items:flex-end;gap:7px;padding:16px 20px}
+  .dev .fitem{font-size:14.5px}
+  .dev .fitem b{font-size:16px}
+  .dev .fsep{display:none}
+}
+@media(max-width:520px){
+  .hide-sm{display:none}
+}
+@media(max-width:640px){
+  #overlay{align-items:flex-end;padding:0}
+  .modal,.modal.wide{max-width:100%;border-radius:24px 24px 0 0;padding:24px 18px calc(24px + env(safe-area-inset-bottom));max-height:92vh;animation:slideup .3s cubic-bezier(.2,1,.4,1)}
+  .mrow{flex-direction:column-reverse}
+  .mrow .btn{width:100%}
+  .mini-table{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="bgfx"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-card glass" id="loginCard">
+    <div class="logo">🎓</div>
+    <h1>42-IDUM <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">sinflar davomati</span></h1>
+    <p class="sub">Sinifni tanlang va parolni kiriting 🔐</p>
+    <div class="chipgrid" id="chipGrid"></div>
+    <div class="pw-wrap">
+      <input type="password" id="inpParol" placeholder="Parolni kiriting..." onkeydown="if(event.key==='Enter')login()" oninput="document.getElementById('loginErr').textContent=''">
+      <button class="eye" onclick="togglePw()" id="eyeBtn">👁️</button>
+    </div>
+    <button class="btn btn-main" onclick="login()">🚀 Kirish</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app" style="display:none">
+<div class="wrap">
+
+  <nav class="topbar glass">
+    <div class="tb-left">
+      <div class="tb-logo">🎓</div>
+      <div><h2 id="tbTitle"> Davomat</h2><small id="tbSub">Maktab davomat tizimi</small></div>
+    </div>
+    <div class="tb-btns">
+      <a href="https://t.me/rahimovaumidaxon" target="_blank" class="btn btn-ghost" id="kanalBtn" title="Maktab Telegram kanali">📢<span class="hide-sm"> Kanal</span></a>
+      <button class="btn btn-ghost" onclick="toggleTheme()" id="themeBtn">🌙</button>
+      <button class="btn btn-gold" onclick="openStat()">📊<span class="hide-sm"> Statistika</span></button>
+      <button class="btn btn-ghost" onclick="settingsModal()" title="Sozlamalar">⚙️</button>
+      <button class="btn btn-ghost" onclick="logout()" title="Chiqish">🚪</button>
+    </div>
+  </nav>
+
+  <!-- Rahbar -->
+  <div class="tcard glass" id="tcard"></div>
+
+  <!-- Statistika kartochkalari -->
+  <div class="statgrid" id="statGrid"></div>
+
+  <!-- Davomat -->
+  <div class="acard glass">
+    <div class="ahead">
+      <div class="datenav">
+        <button class="navbtn" onclick="navDay(-1)">←</button>
+        <input type="date" id="inpSana" onchange="renderAll()">
+        <button class="navbtn" onclick="navDay(1)">→</button>
+        <button class="btn-today" onclick="goToday();renderAll()">Bugun</button>
+      </div>
+      <div class="search">
+        <span class="si">🔍</span>
+        <input type="text" id="inpSearch" placeholder="O'quvchi qidirish..." oninput="renderList()">
+      </div>
+    </div>
+    <div class="quickrow">
+      <button class="btn-quick" onclick="markAll()">✅ Hammaga Keldi</button>
+      <button class="btn-quick clear" onclick="clearDay()">🧹 Tozalash</button>
+
+    </div>
+    <div id="studentsList"></div>
+    <div class="addrow">
+      <input type="text" id="newFamilya" placeholder="Familya" onkeydown="if(event.key==='Enter')document.getElementById('newIsm').focus()">
+      <input type="text" id="newIsm" placeholder="Ism" onkeydown="if(event.key==='Enter')addStudent()">
+      <button class="btn btn-add" onclick="addStudent()">➕ Qo'shish</button>
+    </div>
+  </div>
+
+  <!-- Send -->
+<!-- ✅ TO'G'RI -->
+<div class="sendzone glass">
+  <button class="btn btn-send" id="btnSend" onclick="jonatish()">Tasdiqlash</button>
+  <div class="sendhint" id="sendHint">Davomat belgilangach, sinif rahbariga yuboriladi</div>
+</div>
+
+<footer id="footerInfo"></footer>
+
+
+<!-- Chop etish uchun yashirin maydon -->
+<div id="printArea"></div>
+
+<!-- ================= MODAL ================= -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<div id="toasts"></div>
+<input type="file" id="fileImport" accept=".json" style="display:none" onchange="doImport(event)">
+
+<script>
+/* ================================================================
+  ⚙️ BOSHLANG'ICH SOZLAMALAR
+  Keyin hammasi saytdagi ⚙️ Sozlamalar panelidan o'zgartiriladi!
+  ================================================================ */
+const CONFIG = {
+  maktabNomi: "42-IDUM",
+  yaratuvchi: {
+    ism:  "Nazarboy",            // <-- o'z ismingizni yozing
+    tel:  "+998 50 200 15 12",   // <-- o'z telefon raqamingizni yozing
+    telegram: "https://t.me/AQSh_Treyder"
+  },
+  /* ================================================================
+    📢 TELEGRAM KANAL — davomat shu kanalga ham avtomatik yuboriladi
+    chatId: kanal username i (@ bilan) yoki kanal chat ID si
+    botToken: kanalga ADMIN qilingan bot tokeni (bo'sh bo'lsa —
+              sinifning asosiy bot tokeni ishlatiladi)
+    MUHIM: ushbu bot kanalda admin (xabar yuborish huquqi) bo'lishi kerak!
+    ================================================================ */
+  kanal: {
+    chatId: "-1004335803885",   // kanal chat ID si (Telegram -100 prefiksi bilan)
+    botToken: ""                // bo'sh bo'lsa sinifning asosiy boti ishlatiladi
+  },
+  /* ================================================================
+    ✈️ TELEGRAM BOT — SHU YERGA YOZILADI (har sinif uchun alohida)
+    botToken  : @BotFather dan olingan token (masalan: 123456:AAH...)
+    chatId    : ustozning chat ID si (@userinfobot dan olinadi)
+    botToken1/chatId1 va botToken2/chatId2 — qo'shimcha (masalan,
+    direktor yoki administrator) botlari. Bo'sh qoldirilsa, yuborilmaydi.
+    ================================================================ */
+  sinflar: [
+    { id:"5a",  nomi:"5-A",  parol:"3956",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"185876885", oquvchilar:[] },
+    { id:"5b",  nomi:"5-B",  parol:"6673",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"5c",  nomi:"5-C",  parol:"2785",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"6a",  nomi:"6-A",  parol:"6548",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"6b",  nomi:"6-B",  parol:"5495",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"6c",  nomi:"6-C",  parol:"4681",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"7a",  nomi:"7-A",  parol:"9574",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"7b",  nomi:"7-B",  parol:"4779",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"7c",  nomi:"7-C",  parol:"8332",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"8a",  nomi:"8-A",  parol:"2553",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8890332208:AAGLcz6n1Gv8OeoRX_4hFXuV3AURHukkiSA", chatId:"1332668982", botToken1:"8325982898:AAFBNRXh3v8NGgzQDrlEGQpXtHdiQcQdHMQ", chatId1:"1332668982", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"8b",  nomi:"8-B",  parol:"1194",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId1:"8591113330", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"9a",  nomi:"9-A",  parol:"3459",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"9b",  nomi:"9-B",  parol:"3562",  rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"10a", nomi:"10-A", parol:"1674", rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"10d", nomi:"10-D", parol:"4649", rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"11a", nomi:"11-A", parol:"9938", rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+    { id:"11b", nomi:"11-B", parol:"1435", rahbar:{familya:"", ism:"", tel:""}, botToken:"8903134643:AAGz3GUqEdjhlnsbpyb42eBAycluuemKHlA", chatId:"7050310480", botToken1:"8813176626:AAFtGqyvAUdNNb5OQlVhA3duNWOy3AHHMU8", chatId1:"2110966187", botToken2:"", chatId2:"", oquvchilar:[] },
+  ]
+};
+
+
+/* ================================================================
+  HOLAT VA SAQLASH
+  ================================================================ */
+const LS_KEY = "davomat_data_v1";
+let DATA = { records:{}, students:{}, settings:{} };
+let SINF = null, selSinfId = null, chart = null, chart2 = null, statDays = 30;
+
+function load(){
+  try{ const s = localStorage.getItem(LS_KEY); if(s) DATA = JSON.parse(s); }catch(e){}
+  if(!DATA.records) DATA.records = {};
+  if(!DATA.students) DATA.students = {};
+  if(!DATA.settings) DATA.settings = { sinflar:{} };
+  if(!DATA.settings.sinflar) DATA.settings.sinflar = {};
+  CONFIG.sinflar.forEach(c=>{
+    if(!DATA.students[c.id]) DATA.students[c.id] = c.oquvchilar.map(o=>o.slice());
+    if(!DATA.records[c.id]) DATA.records[c.id] = {};
+  });
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
+
+/* Sinifning amaldagi sozlamalari (kod + ⚙️ paneldagi o'zgartirishlar) */
+function effSinf(c){
+  const o = DATA.settings.sinflar[c.id] || {};
+  return {
+    ...c,
+    parol: o.parol || c.parol,
+    rahbar: { ...c.rahbar, ...(o.rahbar||{}) },
+    botToken:  o.botToken  ?? c.botToken,
+    chatId:    o.chatId    ?? c.chatId,
+    botToken1: o.botToken1 ?? c.botToken1,
+    chatId1:   o.chatId1   ?? c.chatId1,
+    botToken2: o.botToken2 ?? c.botToken2,
+    chatId2:   o.chatId2   ?? c.chatId2
+  };
+}
+function effKanal(){ return { ...CONFIG.kanal, ...(DATA.settings.kanal||{}) }; }
+function effMaktab(){ return CONFIG.maktabNomi; } // maktab nomi faqat kodda
+function effYaratuvchi(){ return { ...CONFIG.yaratuvchi, ...(DATA.settings.yaratuvchi||{}) }; }
+
+const AVA_COLORS = ["#4f8cff","#8b5cf6","#06b6d4","#f59e0b","#ef4444","#10b981","#ec4899","#6366f1"];
+function avaColor(name){ let h=0; for(const ch of name) h=(h*31+ch.charCodeAt(0))>>>0; return AVA_COLORS[h%AVA_COLORS.length]; }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function keyOf(st){ return st[0]+" "+st[1]; }
+function buzz(){ if(navigator.vibrate) navigator.vibrate(12); }
+
+/* ================================================================
+  TEMA
+  ================================================================ */
+function toggleTheme(){
+  const html = document.documentElement;
+  const next = html.dataset.theme === "dark" ? "light" : "dark";
+  html.dataset.theme = next;
+  localStorage.setItem("davomat_theme", next);
+  document.querySelector('meta[name=theme-color]').content = next==="dark" ? "#0a0f1e" : "#eef2fb";
+  document.getElementById("themeBtn").textContent = next==="dark" ? "🌙" : "☀️";
+  toast(next==="dark" ? "🌙 Tungi rejim" : "☀️ Kunduzgi rejim", "ok");
+}
+(function(){
+  const t = localStorage.getItem("davomat_theme") || "dark";
+  document.documentElement.dataset.theme = t;
+  const btn = document.getElementById("themeBtn");
+  if(btn) btn.textContent = t==="dark" ? "🌙" : "☀️";
+  document.querySelector('meta[name=theme-color]').content = t==="dark" ? "#0a0f1e" : "#eef2fb";
+})();
+
+/* ================================================================
+  TOAST
+  ================================================================ */
+function toast(msg, type="info", ms=2600){
+  const el = document.createElement("div");
+  el.className = "toast "+type;
+  el.innerHTML = msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(), 300); }, ms);
+}
+
+/* ================================================================
+  MODAL
+  ================================================================ */
+function openModal(html, wide=false){
+  const box = document.getElementById("modalBox");
+  box.className = "modal"+(wide?" wide":"");
+  box.innerHTML = html;
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); if(chart){chart.destroy();chart=null;} if(chart2){chart2.destroy();chart2=null;} }
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+/* ================================================================
+  LOGIN
+  ================================================================ */
+function fillChips(){
+  document.getElementById("chipGrid").innerHTML = CONFIG.sinflar.map(c=>
+    `<button class="chip" data-id="${c.id}" onclick="pickSinf('${c.id}')">${esc(c.nomi)}</button>`
+  ).join("");
+}
+function pickSinf(id){
+  selSinfId = id;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("sel", c.dataset.id===id));
+  document.getElementById("inpParol").focus();
+}
+function togglePw(){
+  const i = document.getElementById("inpParol");
+  i.type = i.type==="password" ? "text" : "password";
+  document.getElementById("eyeBtn").textContent = i.type==="password" ? "👁️" : "🙈";
+}
+function login(){
+  const c = CONFIG.sinflar.find(x=>x.id===selSinfId);
+  const p = document.getElementById("inpParol").value.trim();
+  if(!c){ toast("⚠️ Avval sinifni tanlang!","warn"); return; }
+  const e = effSinf(c);
+  if(p === e.parol){
+    SINF = e;
+    sessionStorage.setItem("davomat_sinf", c.id);
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("app").style.display="block";
+    goToday();
+    renderAll();
+    toast(`🎉 ${c.nomi}-sinfga xush kelibsiz!`, "ok");
+  } else {
+    document.getElementById("loginErr").textContent = "❌ Parol xato! Qaytadan urinib ko'ring.";
+    document.getElementById("loginCard").classList.add("shake");
+    setTimeout(()=>document.getElementById("loginCard").classList.remove("shake"), 450);
+    buzz();
+  }
+}
+function logout(){
+  SINF = null;
+  sessionStorage.removeItem("davomat_sinf");
+  document.getElementById("app").style.display="none";
+  document.getElementById("loginScreen").style.display="flex";
+  document.getElementById("inpParol").value="";
+  document.getElementById("loginErr").textContent="";
+}
+
+/* ================================================================
+  SANALAR
+  ================================================================ */
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function fmtDate(s){ const [y,m,d]=s.split("-"); return `${d}.${m}.${y}`; }
+function shiftDay(n){
+  const inp = document.getElementById("inpSana");
+  const d = new Date(inp.value || todayStr());
+  d.setDate(d.getDate()+n);
+  inp.value = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  renderAll();
+}
+function navDay(n){ shiftDay(n); }
+function goToday(){ document.getElementById("inpSana").value = todayStr(); }
+
+/* ================================================================
+  RENDER
+  ================================================================ */
+function renderAll(){ renderHeader(); renderTeacher(); renderStats(); renderList(); }
+function renderHeader(){
+  document.getElementById("tbTitle").textContent = SINF.nomi + "-sinf davomati";
+  document.getElementById("tbSub").textContent = effMaktab();
+}
+function renderTeacher(){
+  
+  const rb = SINF.rahbar;
+  const initials = ((rb.familya||"?")[0]||"") + ((rb.ism||"")[0]||"");
+  document.getElementById("tcard").innerHTML = `
+    <div class="tava">${esc(initials.toUpperCase())}</div>
+    <div class="tinfo">
+      <small>Sinif rahbari</small>
+      <b>${esc(rb.familya||"—")} ${esc(rb.ism||"")}</b>
+      📞 <a href="tel:${esc((rb.tel||"").replace(/\s/g,""))}">${esc(rb.tel||"—")}</a>
+    </div>
+    
+    <div class="tbadge">🏫 ${esc(SINF.nomi)}-sinf</div>`;
+  const y = effYaratuvchi();
+  document.getElementById("footerInfo").innerHTML = `
+    <div class="dev">💻 Sayt yaratuvchisi: <b>${esc(y.ism)}</b> &nbsp;|&nbsp; 📞 <b>${esc(y.tel)}</b>
+    ${y.telegram?`&nbsp;|&nbsp;✈️ <a href="${esc(y.telegram)}" target="_blank">Telegram</a>`:""}</div>`;
+}
+function getRec(){
+  const sana = document.getElementById("inpSana").value || todayStr();
+  if(!DATA.records[SINF.id][sana]) DATA.records[SINF.id][sana] = {};
+  return DATA.records[SINF.id][sana];
+    document.getElementById("footerInfo").innerHTML = `
+    <div class="dev">
+      <span class="fitem ftitle">💻 Sayt yaratuvchisi: <b>${esc(y.ism)}</b></span>
+      <span class="fsep">|</span>
+      <span class="fitem">📞 <a href="tel:${esc((y.tel||"").replace(/\s/g,""))}"><b>${esc(y.tel)}</b></a></span>
+      ${y.telegram?`
+      <span class="fsep">|</span>
+      <span class="fitem">✈️ <a href="${esc(y.telegram)}" target="_blank">Telegram</a></span>`:""}
+    </div>`;
+}
+function renderStats(){
+  const rec = getRec();
+  let keldi=0, kelmadi=0, sababli=0;
+  Object.values(rec).forEach(r=>{
+    if(r.st==="keldi")keldi++; else if(r.st==="kelmadi")kelmadi++; else sababli++;
+  });
+  const total = DATA.students[SINF.id].length;
+  const belgilangan = keldi+kelmadi+sababli;
+  const foiz = belgilangan ? Math.round(keldi/belgilangan*100) : 0;
+  const ringBg = `conic-gradient(var(--ok) ${foiz*3.6}deg, rgba(128,140,160,.18) 0)`;
+  document.getElementById("statGrid").innerHTML = `
+    <div class="stat glass"><div class="ic ic-blue">👥</div><div><b>${total}</b><span>O'quvchilar</span></div></div>
+    <div class="stat glass"><div class="ic ic-green">✅</div><div><b>${keldi}</b><span>Keldi</span></div></div>
+    <div class="stat glass"><div class="ic ic-red">❌</div><div><b>${kelmadi}</b><span>Kelmadi</span></div></div>
+    <div class="stat glass"><div class="ic ic-amber">📝</div><div><b>${sababli}</b><span>Sababli</span></div></div>
+    <div class="stat glass"><div class="ring" style="background:${ringBg}"><span style="position:relative">${foiz}%</span></div><div><b style="font-size:17px">Kelish</b><span>foizi</span></div></div>`;
+}
+function dots7(key){
+  let out = `<span style="margin-right:4px">7 kun:</span>`;
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const s = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const r = (DATA.records[SINF.id][s]||{})[key];
+    out += `<span class="dot ${r ? (r.st==="keldi"?"d-ok":r.st==="kelmadi"?"d-no":"d-warn") : "d-none"}" title="${fmtDate(s)}"></span>`;
+  }
+  return out;
+}
+function renderList(){
+  const rec = getRec();
+  const q = (document.getElementById("inpSearch").value||"").toLowerCase();
+  const students = DATA.students[SINF.id];
+  const list = document.getElementById("studentsList");
+  const filtered = students.filter(st => (st[0]+" "+st[1]).toLowerCase().includes(q));
+
+  if(!students.length){
+    list.innerHTML = `<div class="empty"><div class="big">📭</div>O'quvchilar hali qo'shilmagan.<br>Pastdagi formadan qo'shing.</div>`;
+    return;
+  }
+  if(!filtered.length){
+    list.innerHTML = `<div class="empty"><div class="big">🔍</div>Hech narsa topilmadi</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(st => {
+    const idx = students.indexOf(st);
+    const key = keyOf(st);
+    const r = rec[key];
+    const col = avaColor(key);
+    let pill, pillCls, okOn="", noOn="", warnOn="";
+    if(!r){ pill="⏳ Belgilanmagan"; pillCls="p-none"; }
+    else if(r.st==="keldi"){ pill="✅ Keldi"; pillCls="p-keldi"; okOn="on-ok"; }
+    else if(r.st==="kelmadi"){ pill="❌ Kelmadi"; pillCls="p-kelmadi"; noOn="on-no"; }
+    else { pill="📝 Sababli"+(r.sabab?" · "+esc(r.sabab):""); pillCls="p-sababli"; warnOn="on-warn"; }
+    return `<div class="srow">
+      <span class="snum">${idx+1}</span>
+      <div class="sava" style="background:${col}">${esc((st[1][0]||"")+((st[0][0]||"")||"")).toUpperCase()}</div>
+      <div class="sfio"><b>${esc(st[0])} ${esc(st[1])}</b><small>${dots7(key)}</small></div>
+      <span class="spill ${pillCls}">${pill}</span>
+      <div class="acts">
+        <button class="abtn ${okOn}" title="Keldi" onclick="mark(${idx},'keldi')">✔️</button>
+        <button class="abtn ${noOn}" title="Kelmadi" onclick="mark(${idx},'kelmadi')">❌</button>
+        <button class="abtn ${warnOn}" title="Sababli" onclick="sababModal(${idx})">📝</button>
+        <button class="abtn wa" title="Ota-onaga WhatsApp xabar" onclick="waParent(${idx})">💬</button>
+        <button class="abtn" title="Tahrirlash" onclick="editModal(${idx})">✏️</button>
+        <button class="abtn" title="O'chirish" onclick="delModal(${idx})">🗑️</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ================================================================
+  O'QUVCHI AMALLARI
+  ================================================================ */
+function addStudent(){
+  const f = document.getElementById("newFamilya").value.trim();
+  const i = document.getElementById("newIsm").value.trim();
+  if(!f || !i){ toast("⚠️ Familya va ismni kiriting!","warn"); return; }
+  if(DATA.students[SINF.id].some(s=>keyOf(s)===f+" "+i)){
+    toast("⚠️ <b>"+esc(f)+" "+esc(i)+"</b> allaqachon mavjud!","warn"); return;
+  }
+  DATA.students[SINF.id].push([f,i,""]);
+  save();
+  document.getElementById("newFamilya").value=""; document.getElementById("newIsm").value="";
+  renderStats(); renderList();
+  toast(`✅ <b>${esc(f)} ${esc(i)}</b> qo'shildi`, "ok");
+}
+function mark(idx, st){
+  const student = DATA.students[SINF.id][idx];
+  const rec = getRec();
+  const key = keyOf(student);
+  if(rec[key] && rec[key].st === st){ delete rec[key]; }
+  else rec[key] = { st, sabab:"" };
+  buzz(); save(); renderStats(); renderList();
+}
+function markAll(){
+  const rec = getRec();
+  let n = 0;
+  DATA.students[SINF.id].forEach(st=>{
+    const key = keyOf(st);
+    if(!rec[key]){ rec[key] = { st:"keldi", sabab:"" }; n++; }
+  });
+  if(!n){ toast("ℹ️ Hammasi allaqachon belgilangan","warn"); return; }
+  buzz(); save(); renderStats(); renderList();
+  toast(`✅ <b>${n} ta</b> o'quvchiga "Keldi" belgilandi`, "ok");
+}
+function clearDay(){
+  const sana = document.getElementById("inpSana").value || todayStr();
+  if(!Object.keys(DATA.records[SINF.id][sana]||{}).length){ toast("ℹ️ Bu kunda yozuv yo'q","warn"); return; }
+  openModal(`
+    <h3>🧹 Kunlik davomatni tozalash</h3>
+    <p class="msub"><b>${fmtDate(sana)}</b> sanasidagi barcha belgilar o'chiriladi!</p>
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="doClearDay()">🧹 Ha, tozalash</button>
+    </div>`);
+}
+function doClearDay(){
+  const sana = document.getElementById("inpSana").value || todayStr();
+  delete DATA.records[SINF.id][sana];
+  save(); closeModal(); renderStats(); renderList();
+  toast("🧹 Kun tozalandi", "warn");
+}
+
+function sababModal(idx){
+  const st = DATA.students[SINF.id][idx];
+  const rec = getRec();
+  const r = rec[keyOf(st)];
+  openModal(`
+    <h3>📝 Sababli deb belgilash</h3>
+    <p class="msub">${esc(st[0])} ${esc(st[1])} — sababni kiriting</p>
+    <label>Sabab</label>
+    <input type="text" id="mSabab" placeholder="Masalan: kasal, oilaviy sabab..." value="${esc(r&&r.st==="sababli"?r.sabab:"")}"
+      onkeydown="if(event.key==='Enter')setSabab(${idx})">
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="clearSabab(${idx})">🗑️ Belgini o'chirish</button>
+      <button class="btn btn-ok" onclick="setSabab(${idx})">💾 Saqlash</button>
+    </div>`);
+  setTimeout(()=>document.getElementById("mSabab").focus(),50);
+}
+function setSabab(idx){
+  const st = DATA.students[SINF.id][idx];
+  const s = document.getElementById("mSabab").value.trim();
+  const rec = getRec();
+  if(!s){ delete rec[keyOf(st)]; toast("🗑️ Belgilanmagan holatga qaytarildi","warn"); }
+  else { rec[keyOf(st)] = { st:"sababli", sabab:s }; toast(`📝 <b>${esc(st[0])} ${esc(st[1])}</b> — sabab saqlandi`, "ok"); }
+  save(); closeModal(); renderStats(); renderList();
+}
+function clearSabab(idx){
+  const st = DATA.students[SINF.id][idx];
+  delete getRec()[keyOf(st)];
+  save(); closeModal(); renderStats(); renderList();
+  toast("🗑️ Belgini o'chirildi", "warn");
+}
+function editModal(idx){
+  const st = DATA.students[SINF.id][idx];
+  openModal(`
+    <h3>✏️ O'quvchini tahrirlash</h3>
+    <p class="msub">Davomat tarixi saqlanib qoladi</p>
+    <label>Familya</label><input type="text" id="mFam" value="${esc(st[0])}">
+    <label>Ism</label><input type="text" id="mIsm" value="${esc(st[1])}">
+    <label>Ota-ona telefoni (WhatsApp uchun)</label>
+    <input type="tel" id="mTel" placeholder="+998901234567" value="${esc(st[2]||"")}">
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-ok" onclick="doEdit(${idx})">💾 Saqlash</button>
+    </div>`);
+  setTimeout(()=>document.getElementById("mFam").focus(),50);
+}
+function doEdit(idx){
+  const st = DATA.students[SINF.id][idx];
+  const nf = document.getElementById("mFam").value.trim();
+  const ni = document.getElementById("mIsm").value.trim();
+  const nt = document.getElementById("mTel").value.trim();
+  if(!nf || !ni){ toast("⚠️ Familya va ism bo'sh bo'lmasin!","warn"); return; }
+  const oldKey = keyOf(st), newKey = nf+" "+ni;
+  const dup = DATA.students[SINF.id].some((s,i2)=>i2!==idx && keyOf(s)===newKey);
+  if(dup){ toast("⚠️ Bunday o'quvchi allaqachon mavjud!","warn"); return; }
+  Object.values(DATA.records[SINF.id]).forEach(rec=>{
+    if(rec[oldKey]){ rec[newKey]=rec[oldKey]; delete rec[oldKey]; }
+  });
+  DATA.students[SINF.id][idx] = [nf, ni, nt];
+  save(); closeModal(); renderStats(); renderList();
+  toast(`✅ Ma'lumotlar yangilandi`, "ok");
+}
+function delModal(idx){
+  const st = DATA.students[SINF.id][idx];
+  openModal(`
+    <h3>🗑️ O'chirishni tasdiqlaysizmi?</h3>
+    <p class="msub"><b>${esc(st[0])} ${esc(st[1])}</b> va uning barcha davomat tarixi o'chiriladi. Bu amalni qaytarib bo'lmaydi!</p>
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-danger" onclick="doDel(${idx})">🗑️ Ha, o'chirish</button>
+    </div>`);
+}
+function doDel(idx){
+  const st = DATA.students[SINF.id][idx];
+  const key = keyOf(st);
+  Object.values(DATA.records[SINF.id]).forEach(rec=>delete rec[key]);
+  DATA.students[SINF.id].splice(idx,1);
+  save(); closeModal(); renderStats(); renderList();
+  toast(`🗑️ <b>${esc(st[0])} ${esc(st[1])}</b> o'chirildi`, "warn");
+}
+
+/* ================================================================
+  OTA-ONAGA WHATSAPP XABAR
+  ================================================================ */
+function waParent(idx){
+  const st = DATA.students[SINF.id][idx];
+  const tel = (st[2]||"").replace(/\D/g,"");
+  if(!tel){ toast("⚠️ Avval ✏️ orqali ota-ona telefonini kiriting!","warn",3200); editModal(idx); return; }
+  const sana = document.getElementById("inpSana").value || todayStr();
+  const r = getRec()[keyOf(st)];
+  let holat;
+  if(!r) holat = "bugun davomatga qo'shilmagan";
+  else if(r.st==="keldi") holat = "bugun maktabga KELDI ✅";
+  else if(r.st==="kelmadi") holat = "bugun maktabga KELMADI ❌";
+  else holat = "bugun SABABLI deb belgilandi (sabab: "+(r.sabab||"ko'rsatilmagan")+") 📝";
+  const msg = `Assalomu alaykum! ${st[0]} ${st[1]} ${fmtDate(sana)} holatiga ko'ra ${holat}.\n${SINF.nomi}-sinf, ${effMaktab()}.`;
+  let norm = tel;
+  if(!norm.startsWith("998")) norm = "998"+norm.replace(/^[08]/,"");
+  window.open(`https://wa.me/${norm}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+/* ================================================================
+  TELEGRAM GA JO'NATISH (barcha sozlangan botlarga)
+  ================================================================ */
+async function sendToTelegram(token, chatId, text){
+  const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ chat_id:chatId, text, parse_mode:"HTML" })
+  });
+  const j = await resp.json();
+  if(!j.ok) throw new Error(j.description || "noma'lum xato");
+  return j;
+}
+
+async function jonatish(){
+  const btn = document.getElementById("btnSend");
+  const hint = document.getElementById("sendHint");
+  const sana = document.getElementById("inpSana").value || todayStr();
+  const rec = DATA.records[SINF.id][sana] || {};
+
+  if(!Object.keys(rec).length){ toast("⚠️ Avval davomatni belgilang!","warn"); return; }
+
+  /* Barcha sozlangan bot/chat juftliklari + kanal */
+  const kanal = effKanal();
+  const targets = [
+    { label:"Rahbar bot",      token:SINF.botToken,  chat:SINF.chatId },
+    { label:"Qo'shimcha bot 1",token:SINF.botToken1, chat:SINF.chatId1 },
+    { label:"Qo'shimcha bot 2",token:SINF.botToken2, chat:SINF.chatId2 }
+  ];
+  /* 📢 Kanalga ham yuborish (bot kanalda admin bo'lishi shart) */
+  if(kanal.chatId) targets.push({
+    label:"📢 Kanal ("+kanal.chatId+")",
+    token: kanal.botToken || SINF.botToken,
+    chat: kanal.chatId
+  });
+  const okTargets = targets.filter(t=>t.token && t.chat);
+
+  if(!okTargets.length){
+    toast("⚠️ Hech qanday bot sozlanmagan! ⚙️ Sozlamalar panelidan kiriting.","err",4200); return;
+  }
+
+  const keldi=[], kelmadi=[], sababli=[];
+  DATA.students[SINF.id].forEach(st=>{
+    const r = rec[keyOf(st)]; if(!r) return;
+    if(r.st==="keldi") keldi.push(esc(st[0]+" "+st[1]));
+    else if(r.st==="kelmadi") kelmadi.push(esc(st[0]+" "+st[1]));
+    else sababli.push(esc(st[0]+" "+st[1])+(r.sabab?" ("+esc(r.sabab)+")":""));
+  });
+
+  const rb = SINF.rahbar;
+  const belgilangan = keldi.length+kelmadi.length+sababli.length;
+  const foiz = belgilangan ? Math.round(keldi.length/belgilangan*100) : 0;
+  let text = `🤖 <b>SMART DAVOMAT PRO</b>\n`;
+  text += `━━━━━━━━━━━━━━━\n`;
+  text += `🏫 Sinf: <b>${esc(SINF.nomi)}</b>\n📆 Sana: <b>${fmtDate(sana)}</b>\n`;
+  text += `👨‍🏫 Rahbar: ${esc(rb.familya)} ${esc(rb.ism)} (${esc(rb.tel)})\n📊 Kelish foizi: <b>${foiz}%</b>\n`;
+  text += `━━━━━━━━━━━━━━━\n`;
+  text += `\n✅ <b>Kelganlar — ${keldi.length} ta:</b>\n${keldi.map((s,i)=>`${i+1}. ${s}`).join("\n") || "—"}\n`;
+  text += `\n❌ <b>Kelmaganlar — ${kelmadi.length} ta:</b>\n${kelmadi.map((s,i)=>`${i+1}. ${s}`).join("\n") || "—"}\n`;
+  text += `\n📝 <b>Sababli — ${sababli.length} ta:</b>\n${sababli.map((s,i)=>`${i+1}. ${s}`).join("\n") || "—"}`;
+
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spin"></span> Yuborilmoqda...`;
+
+  let okCount = 0; const errors = [];
+  for(const t of okTargets){
+    try{
+      await sendToTelegram(t.token, t.chat, text);
+      okCount++;
+    }catch(e){
+      errors.push(`${t.label}: ${e.message}`);
+    }
+  }
+
+  if(okCount === targets.length){
+    toast(`✅ Davomat ${okCount} ta botga yuborildi!`,"ok",3500);
+    hint.textContent = "✅ Oxirgi yuborilgan sana: "+fmtDate(sana);
+  } else if(okCount > 0){
+    toast(`⚠️ ${okCount}/${targets.length} botga yuborildi. Qolganlari xato berdi.`,"warn",4500);
+  } else {
+    toast("❌ Telegram xatosi: "+esc(errors[0]||"noma'lum"),"err",5000);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = "📤 Jo'natish — Telegram botga";
+}
+
+/* ================================================================
+  STATISTIKA (7 kun / 30 kun) — grafik + XLSX
+  ================================================================ */
+function lastNDays(n){
+  const days=[]; const now=new Date();
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    days.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));
+  }
+  return days;
+}
+function calcStats(n){
+  const days = lastNDays(n);
+  const perStudent = [];
+  const daily = { labels:[], keldi:[], kelmadi:[], sababli:[] };
+  days.forEach(sana=>{
+    const rec = DATA.records[SINF.id][sana]||{};
+    let k=0,km=0,s=0;
+    Object.values(rec).forEach(r=>{
+      if(r.st==="keldi")k++; else if(r.st==="kelmadi")km++; else s++;
+    });
+    daily.labels.push(fmtDate(sana).slice(0,5));
+    daily.keldi.push(k); daily.kelmadi.push(km); daily.sababli.push(s);
+  });
+  DATA.students[SINF.id].forEach(st=>{
+    const key = keyOf(st);
+    let keldi=0,kelmadi=0,sababli=0;
+    const det=[];
+    days.forEach(sana=>{
+      const r = (DATA.records[SINF.id][sana]||{})[key];
+      if(!r) return;
+      if(r.st==="keldi"){keldi++;det.push([fmtDate(sana),st[0],st[1],"Keldi",""]);}
+      else if(r.st==="kelmadi"){kelmadi++;det.push([fmtDate(sana),st[0],st[1],"Kelmadi",""]);}
+      else {sababli++;det.push([fmtDate(sana),st[0],st[1],"Sababli",r.sabab]);}
+    });
+    const jami = keldi+kelmadi+sababli;
+    perStudent.push({ fam:st[0], ism:st[1], keldi, kelmadi, sababli, jami,
+      foiz: jami?Math.round(keldi/jami*100):0, det });
+  });
+  return { days, daily, perStudent };
+}
+function openStat(n){
+  if(n) statDays = n;
+  const S = calcStats(statDays);
+  const sorted = [...S.perStudent].sort((a,b)=>b.foiz-a.foiz);
+  const top = sorted.slice(0,8);
+  openModal(`
+    <h3>📊 ${statDays} kunlik statistika — ${esc(SINF.nomi)}-sinf</h3>
+    <p class="msub">${fmtDate(S.days[0])} — ${fmtDate(S.days[S.days.length-1])} (${statDays} kun)</p>
+    <div class="pertoggle">
+      <button class="${statDays===7?'on':''}" onclick="openStat(7)">7 kun</button>
+      <button class="${statDays===30?'on':''}" onclick="openStat(30)">30 kun</button>
+    </div>
+    <div class="chartbox"><canvas id="statChart"></canvas></div>
+    <div class="chartbox" style="height:200px"><canvas id="topChart"></canvas></div>
+    ${S.perStudent.length?`
+    <table class="mini-table">
+      <tr><th>№</th><th>F.I.Sh</th><th>✅</th><th>❌</th><th>📝</th><th>Foiz</th></tr>
+      ${sorted.map((p,i)=>`<tr>
+        <td>${i+1}</td><td><b>${esc(p.fam)} ${esc(p.ism)}</b></td>
+        <td>${p.keldi}</td><td>${p.kelmadi}</td><td>${p.sababli}</td>
+        <td><span class="pill-s" style="background:${p.foiz>=80?'rgba(34,197,94,.18)':p.foiz>=50?'rgba(245,158,11,.2)':'rgba(239,68,68,.18)'};color:${p.foiz>=80?'#2fd06d':p.foiz>=50?'#f6b93b':'#ff6b6b'}">${p.foiz}%</span></td>
+      </tr>`).join("")}
+    </table>`:`<div class="empty"><div class="big">📭</div>Bu davrda davomat yozuvlari yo'q</div>`}
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="closeModal()">Yopish</button>
+      <button class="btn btn-ok" onclick="downloadXLSX()">📥 XLSX yuklab olish</button>
+    </div>`, true);
+
+  const cs = getComputedStyle(document.documentElement);
+  const textColor = cs.getPropertyValue("--muted").trim();
+  const gridColor = document.documentElement.dataset.theme==="dark" ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.08)";
+  const common = { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:textColor, boxWidth:12, font:{size:11} } } },
+    scales:{ x:{ ticks:{ color:textColor, font:{size:9}, maxTicksLimit:12 }, grid:{color:gridColor} },
+            y:{ ticks:{ color:textColor }, grid:{color:gridColor}, beginAtZero:true } } };
+  chart = new Chart(document.getElementById("statChart"), {
+    type:"line",
+    data:{ labels:S.daily.labels, datasets:[
+      { label:"Keldi", data:S.daily.keldi, borderColor:"#22c55e", backgroundColor:"rgba(34,197,94,.15)", fill:true, tension:.35, pointRadius:2 },
+      { label:"Kelmadi", data:S.daily.kelmadi, borderColor:"#ef4444", backgroundColor:"rgba(239,68,68,.12)", fill:true, tension:.35, pointRadius:2 },
+      { label:"Sababli", data:S.daily.sababli, borderColor:"#f59e0b", backgroundColor:"rgba(245,158,11,.12)", fill:true, tension:.35, pointRadius:2 }
+    ]}, options:common
+  });
+  chart2 = new Chart(document.getElementById("topChart"), {
+    type:"bar",
+    data:{ labels:top.map(p=>p.fam+" "+p.ism.charAt(0)+"."),
+      datasets:[{ label:"Kelish foizi %", data:top.map(p=>p.foiz),
+        backgroundColor:top.map(p=>p.foiz>=80?"#22c55e":p.foiz>=50?"#f59e0b":"#ef4444"),
+        borderRadius:8, maxBarThickness:26 }]},
+    options:{...common, indexAxis:"y", plugins:{ legend:{display:false} }}
+  });
+}
+
+function downloadXLSX(){
+  const S = calcStats(statDays);
+  const rb = SINF.rahbar;
+  const xulosa = [["№","Familya","Ism","Keldi","Kelmadi","Sababli","Belgilangan kunlar","Kelish foizi %"]];
+  [...S.perStudent].sort((a,b)=>b.foiz-a.foiz).forEach((p,i)=> xulosa.push([i+1,p.fam,p.ism,p.keldi,p.kelmadi,p.sababli,p.jami,p.foiz]));
+  const batafsil = [["Sana","Familya","Ism","Holat","Sabab"]];
+  S.perStudent.forEach(p=>p.det.forEach(r=>batafsil.push(r)));
+  const info = [
+    [effMaktab() + ` — ${statDays} KUNLIK DAVOMAT STATISTIKASI`],
+    ["Sinf", SINF.nomi],
+    ["Sinif rahbari", (rb.familya+" "+rb.ism).trim()],
+    ["Telefon", rb.tel],
+    ["Davr", fmtDate(S.days[0])+" — "+fmtDate(S.days[S.days.length-1])+" ("+statDays+" kun)"],
+    ["Yaratildi", fmtDate(todayStr())],
+  ];
+  const wb = XLSX.utils.book_new();
+  const wsInfo = XLSX.utils.aoa_to_sheet(info); wsInfo["!cols"]=[{wch:45},{wch:25}];
+  const wsX = XLSX.utils.aoa_to_sheet(xulosa); wsX["!cols"]=[{wch:5},{wch:20},{wch:14},{wch:9},{wch:10},{wch:10},{wch:18},{wch:15}];
+  const wsB = XLSX.utils.aoa_to_sheet(batafsil); wsB["!cols"]=[{wch:12},{wch:20},{wch:14},{wch:10},{wch:25}];
+  XLSX.utils.book_append_sheet(wb, wsInfo, "Ma'lumot");
+  XLSX.utils.book_append_sheet(wb, wsX, "Xulosa");
+  XLSX.utils.book_append_sheet(wb, wsB, "Batafsil");
+  XLSX.writeFile(wb, `Davomat_${SINF.nomi}_${S.days[0].slice(0,10)}_${statDays}kun.xlsx`);
+  toast("📥 Excel fayl yuklab olindi!", "ok");
+}
+
+/* ================================================================
+  CHOP ETISH (PRINT)
+  ================================================================ */
+function printDavomat(){
+  const sana = document.getElementById("inpSana").value || todayStr();
+  const rec = DATA.records[SINF.id][sana]||{};
+  const rb = SINF.rahbar;
+  const rows = DATA.students[SINF.id].map((st,i)=>{
+    const r = rec[keyOf(st)];
+    const holat = !r ? "—" : r.st==="keldi" ? "Keldi ✅" : r.st==="kelmadi" ? "Kelmadi ❌" : "Sababli"+(r.sabab?" ("+r.sabab+")":"");
+    return `<tr><td>${i+1}</td><td>${esc(st[0])} ${esc(st[1])}</td><td>${esc(holat)}</td></tr>`;
+  }).join("");
+  document.getElementById("printArea").innerHTML = `
+    <h1>${esc(effMaktab())} — DAVOMAT VARAG'I</h1>
+    <div class="pmeta">Sinf: <b>${esc(SINF.nomi)}</b> &nbsp;|&nbsp; Sana: <b>${fmtDate(sana)}</b> &nbsp;|&nbsp;
+      Sinif rahbari: <b>${esc(rb.familya)} ${esc(rb.ism)}</b> (${esc(rb.tel)})</div>
+    <table><tr><th>№</th><th>O'quvchi F.I.Sh</th><th>Holati</th></tr>${rows}</table>
+    <div class="psign"><span>Sinif rahbari: _______________</span><span>Diraktor: _______________</span></div>`;
+  window.print();
+}
+
+/* ================================================================
+  SOZLAMALAR + ZAXIRA
+  ================================================================ */
+function settingsModal(){
+  if(!SINF){ toast("⚠️ Avval sinfga kiring!","warn"); return; }
+  const o = DATA.settings.sinflar[SINF.id]||{};
+  const rb = SINF.rahbar;
+  const kanal = effKanal();
+  openModal(`
+    <h3>⚙️ Sozlamalar — ${esc(SINF.nomi)}-sinf</h3>
+    <p class="msub">Bu yerda hamma narsani o'zgartirishingiz mumkin — kod kerak emas!</p>
+
+    <div class="sect">
+      <h4>👨‍🏫 Sinif rahbari (${esc(SINF.nomi)})</h4>
+      <label>Familya</label><input type="text" id="sRbFam" value="${esc(rb.familya||"")}">
+      <label>Ism</label><input type="text" id="sRbIsm" value="${esc(rb.ism||"")}">
+      <label>Telefon</label><input type="tel" id="sRbTel" value="${esc(rb.tel||"")}">
+    </div>
+
+
+    <div class="mrow">
+      <button class="btn btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn btn-ok" onclick="saveSettings()">💾 Hammasini saqlash</button>
+    </div>`, true);
+}
+function saveSettings(){
+  if(SINF){
+    const o = DATA.settings.sinflar[SINF.id] = DATA.settings.sinflar[SINF.id] || {};
+    o.rahbar = {
+      familya: document.getElementById("sRbFam").value.trim(),
+      ism: document.getElementById("sRbIsm").value.trim(),
+      tel: document.getElementById("sRbTel").value.trim()
+    };
+    o.botToken  = document.getElementById("sBot1").value.trim();
+    o.chatId    = document.getElementById("sChat1").value.trim();
+    o.botToken1 = document.getElementById("sBot2").value.trim();
+    o.chatId1   = document.getElementById("sChat2").value.trim();
+    o.botToken2 = document.getElementById("sBot3").value.trim();
+    o.chatId2   = document.getElementById("sChat3").value.trim();
+    DATA.settings.kanal = {
+      chatId: document.getElementById("sKanalChat").value.trim(),
+      botToken: document.getElementById("sKanalBot").value.trim()
+    };
+    SINF = effSinf(CONFIG.sinflar.find(c=>c.id===SINF.id));
+  }
+  save(); closeModal(); renderAll();
+  toast("✅ Sozlamalar saqlandi!", "ok");
+}
+function doExport(){
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Davomat_Zaxira_${todayStr()}.json`;
+  a.click();
+  toast("💾 Zaxira fayli yuklab olindi!", "ok");
+}
+function doImport(ev){
+  const f = ev.target.files[0];
+  if(!f) return;
+  if(!confirm("Zaxiradan tiklash hozirgi barcha ma'lumotlarni almashtiradi. Davom etamizmi?")){
+    ev.target.value = ""; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const d = JSON.parse(e.target.result);
+      if(!d.records || !d.students) throw new Error("format");
+      DATA = { records:{}, students:{}, settings:{sinflar:{}}, ...d };
+      if(!DATA.settings) DATA.settings = { sinflar:{} };
+      if(!DATA.settings.sinflar) DATA.settings.sinflar = {};
+      save();
+      if(SINF) SINF = effSinf(CONFIG.sinflar.find(c=>c.id===SINF.id));
+      closeModal(); renderAll();
+      toast("✅ Zaxiradan tiklandi!", "ok", 3500);
+    }catch(err){
+      toast("❌ Fayl noto'g'ri yoki buzilgan!","err",3500);
+    }
+  };
+  reader.readAsText(f);
+  ev.target.value = "";
+}
+
+/* ================================================================
+  ISHGA TUSHIRISH
+  ================================================================ */
+load();
+fillChips();
+const savedSinf = sessionStorage.getItem("davomat_sinf");
+if(savedSinf){
+  const base = CONFIG.sinflar.find(c=>c.id===savedSinf);
+  if(base){
+    SINF = effSinf(base);
+    selSinfId = base.id;
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("app").style.display="block";
+    goToday(); renderAll();
+  }
+}
+</script>
+</body>
+</html>
